@@ -1,0 +1,28 @@
+<a href="/entry/<%= entry.id %>" class="entry-card" data-id="<%= entry.id %>">
+  <button class="btn-icon pin-btn <%= entry.pinned ? 'active' : '' %>" data-id="<%= entry.id %>" title="<%= entry.pinned ? 'Unpin' : 'Pin' %>">
+    <i class="bi bi-star<%= entry.pinned ? '-fill' : '' %>"></i>
+  </button>
+  <div class="entry-icon">
+    <% if (entry.type === 'api-key') { %><i class="bi bi-key-fill"></i>
+    <% } else if (entry.type === 'database') { %><i class="bi bi-database-fill"></i>
+    <% } else if (entry.type === 'ssh-key') { %><i class="bi bi-terminal-fill"></i>
+    <% } else if (entry.type === 'note') { %><i class="bi bi-sticky-fill"></i>
+    <% } else if (entry.type === 'ftp') { %><i class="bi bi-hdd-network-fill"></i>
+    <% } else { %><i class="bi bi-lock-fill"></i>
+    <% } %>
+  </div>
+  <div class="entry-info">
+    <div class="entry-name"><%= entry.name %></div>
+    <div class="entry-meta">
+      <span class="badge badge-<%= entry.category %>"><%= entry.category.replace('-', ' ') %></span>
+      <% if (entry.username) { %><span class="entry-user"><i class="bi bi-person-fill"></i> <%= entry.username %></span><% } %>
+    </div>
+  </div>
+  <div class="entry-actions">
+    <% if (entry.username) { %>
+      <button class="btn-icon quick-copy-user" data-id="<%= entry.id %>" title="Copy username"><i class="bi bi-person"></i></button>
+    <% } %>
+    <button class="btn-icon quick-copy-secret" data-id="<%= entry.id %>" title="Copy secret"><i class="bi bi-clipboard"></i></button>
+  </div>
+  <div class="entry-arrow"><i class="bi bi-chevron-right"></i></div>
+</a>

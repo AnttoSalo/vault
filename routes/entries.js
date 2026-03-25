@@ -1,6 +1,5 @@
 import { Router } from "express";
 import * as store from "../lib/store.js";
-import { encrypt } from "../lib/crypto.js";
 
 const router = Router();
 
@@ -20,10 +19,17 @@ router.get("/", (req, res) => {
   });
 });
 
-// New entry form
+// New entry form (supports ?from=id for duplication)
 router.get("/new", (req, res) => {
+  let entry = null;
+  if (req.query.from) {
+    const source = store.getById(req.query.from);
+    if (source) {
+      entry = { ...source, id: null, name: `Copy of ${source.name}` };
+    }
+  }
   res.render("entry-form", {
-    entry: null,
+    entry,
     categories: CATEGORIES,
     types: TYPES,
     error: null,
@@ -90,11 +96,24 @@ router.post("/entry/:id/delete", (req, res) => {
   res.redirect("/");
 });
 
-// XHR: get decrypted secret for clipboard copy
+// XHR: get decrypted secret for clipboard copy (also tracks access)
 router.get("/api/entry/:id/secret", (req, res) => {
   const entry = store.getById(req.params.id);
   if (!entry) return res.status(404).json({ error: "Not found" });
+  store.touch(req.params.id);
   res.json({ secret: entry.secret, username: entry.username });
+});
+
+// XHR: entry metadata for command palette (no secrets)
+router.get("/api/entries", (req, res) => {
+  const entries = store.getAllMeta({ search: req.query.q });
+  res.json(entries);
+});
+
+// XHR: toggle pin
+router.post("/api/entry/:id/pin", (req, res) => {
+  const pinned = store.togglePin(req.params.id);
+  res.json({ pinned: !!pinned });
 });
 
 // Health check

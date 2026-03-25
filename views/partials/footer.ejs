@@ -2,6 +2,51 @@
 
   <div id="toast-container"></div>
 
+  <!-- Command Palette -->
+  <div class="palette-overlay" id="palette">
+    <div class="palette-box">
+      <div class="palette-header">
+        <i class="bi bi-search"></i>
+        <input type="text" class="palette-input" id="palette-input" placeholder="Search entries... or type > for commands" autocomplete="off">
+        <kbd>esc</kbd>
+      </div>
+      <div class="palette-results" id="palette-results"></div>
+    </div>
+  </div>
+
+  <!-- Shortcuts Help Modal -->
+  <div class="modal-overlay" id="shortcuts-modal">
+    <div class="modal-box shortcuts-box">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcuts-grid">
+        <div class="shortcut-section">
+          <h4>Global</h4>
+          <div class="shortcut-row"><kbd>Ctrl+K</kbd> <span>Command palette</span></div>
+          <div class="shortcut-row"><kbd>/</kbd> <span>Focus search</span></div>
+          <div class="shortcut-row"><kbd>N</kbd> <span>New entry</span></div>
+          <div class="shortcut-row"><kbd>Esc</kbd> <span>Close / go back</span></div>
+          <div class="shortcut-row"><kbd>?</kbd> <span>This help</span></div>
+        </div>
+        <div class="shortcut-section">
+          <h4>Entry List</h4>
+          <div class="shortcut-row"><kbd>J</kbd> / <kbd>K</kbd> <span>Navigate down / up</span></div>
+          <div class="shortcut-row"><kbd>Enter</kbd> <span>Open selected</span></div>
+          <div class="shortcut-row"><kbd>C</kbd> <span>Copy secret</span></div>
+        </div>
+        <div class="shortcut-section">
+          <h4>Entry Detail</h4>
+          <div class="shortcut-row"><kbd>E</kbd> <span>Edit</span></div>
+          <div class="shortcut-row"><kbd>C</kbd> <span>Copy secret</span></div>
+          <div class="shortcut-row"><kbd>U</kbd> <span>Copy username</span></div>
+          <div class="shortcut-row"><kbd>B</kbd> <span>Back to list</span></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="shortcuts-close">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script nonce="<%= nonce %>">
     // Theme toggle
     const html = document.documentElement;

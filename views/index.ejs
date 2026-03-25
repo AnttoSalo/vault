@@ -8,14 +8,16 @@
   <form class="search-form" method="GET" action="/">
     <div class="search-wrap">
       <i class="bi bi-search"></i>
-      <input type="text" name="search" value="<%= search %>" placeholder="Search entries..." id="search-input">
+      <input type="text" name="search" value="<%= search %>" placeholder="Search entries...  (/ to focus)" id="search-input">
       <% if (search) { %><a href="/" class="search-clear"><i class="bi bi-x-lg"></i></a><% } %>
+      <kbd class="search-kbd">Ctrl+K</kbd>
     </div>
     <input type="hidden" name="category" value="<%= category %>">
   </form>
 
   <div class="category-pills">
     <a href="/?search=<%= encodeURIComponent(search) %>" class="pill <%= category === 'all' ? 'active' : '' %>">All</a>
+    <a href="/?category=recent&search=<%= encodeURIComponent(search) %>" class="pill <%= category === 'recent' ? 'active' : '' %>"><i class="bi bi-clock-history"></i> Recent</a>
     <% categories.forEach(c => { %>
       <a href="/?category=<%= c %>&search=<%= encodeURIComponent(search) %>" class="pill <%= category === c ? 'active' : '' %>"><%= c.replace('-', ' ') %></a>
     <% }) %>
@@ -31,27 +33,21 @@
     <% } %>
   </div>
 <% } else { %>
-  <div class="entry-list">
-    <% entries.forEach(entry => { %>
-      <a href="/entry/<%= entry.id %>" class="entry-card">
-        <div class="entry-icon">
-          <% if (entry.type === 'api-key') { %><i class="bi bi-key-fill"></i>
-          <% } else if (entry.type === 'database') { %><i class="bi bi-database-fill"></i>
-          <% } else if (entry.type === 'ssh-key') { %><i class="bi bi-terminal-fill"></i>
-          <% } else if (entry.type === 'note') { %><i class="bi bi-sticky-fill"></i>
-          <% } else if (entry.type === 'ftp') { %><i class="bi bi-hdd-network-fill"></i>
-          <% } else { %><i class="bi bi-lock-fill"></i>
-          <% } %>
-        </div>
-        <div class="entry-info">
-          <div class="entry-name"><%= entry.name %></div>
-          <div class="entry-meta">
-            <span class="badge badge-<%= entry.category %>"><%= entry.category.replace('-', ' ') %></span>
-            <% if (entry.username) { %><span class="entry-user"><i class="bi bi-person-fill"></i> <%= entry.username %></span><% } %>
-          </div>
-        </div>
-        <div class="entry-arrow"><i class="bi bi-chevron-right"></i></div>
-      </a>
+  <%
+    const pinned = entries.filter(e => e.pinned);
+    const unpinned = entries.filter(e => !e.pinned);
+  %>
+  <div class="entry-list" id="entry-list">
+    <% if (pinned.length > 0 && category !== 'recent') { %>
+      <% pinned.forEach(entry => { %>
+        <%- include('partials/entry-card', { entry }) %>
+      <% }) %>
+      <% if (unpinned.length > 0) { %>
+        <div class="pinned-divider"></div>
+      <% } %>
+    <% } %>
+    <% (category === 'recent' ? entries : unpinned).forEach(entry => { %>
+      <%- include('partials/entry-card', { entry }) %>
     <% }) %>
   </div>
 <% } %>
@@ -61,6 +57,7 @@
   <div class="footer-actions">
     <button class="btn-icon" id="import-btn" title="Import backup"><i class="bi bi-upload"></i></button>
     <a href="/export" class="btn-icon" title="Export backup"><i class="bi bi-download"></i></a>
+    <button class="btn-icon" id="shortcuts-btn" title="Keyboard shortcuts"><i class="bi bi-keyboard"></i></button>
   </div>
 </div>
 
@@ -70,7 +67,12 @@
     <h3>Import Backup</h3>
     <form method="POST" action="/import">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <textarea name="data" placeholder="Paste backup JSON here..." rows="6" required></textarea>
+      <div class="import-dropzone" id="import-dropzone">
+        <i class="bi bi-file-earmark-arrow-up"></i>
+        <p>Drop a backup JSON file here or <label for="import-file" class="import-file-label">choose file</label></p>
+        <input type="file" id="import-file" accept=".json" class="sr-only">
+      </div>
+      <textarea name="data" id="import-data" placeholder="...or paste backup JSON here" rows="4"></textarea>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" id="import-cancel">Cancel</button>
         <button type="submit" class="btn btn-primary">Import</button>
