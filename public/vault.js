@@ -19,6 +19,37 @@ function isInputFocused() {
   return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
 }
 
+function withLoading(btn, asyncFn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  asyncFn().finally(() => {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  });
+}
+
+function closeWithAnimation(overlay) {
+  if (!overlay || !overlay.classList.contains('active')) return;
+  overlay.classList.add('closing');
+  overlay.addEventListener('animationend', () => {
+    overlay.classList.remove('active', 'closing');
+  }, { once: true });
+}
+
+function formatRelativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + 'h ago';
+  const days = Math.floor(hours / 24);
+  if (days < 30) return days + 'd ago';
+  const months = Math.floor(days / 30);
+  return months + 'mo ago';
+}
+
 async function copySecret(id) {
   try {
     const res = await fetch(`/api/entry/${id}/secret`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -47,6 +78,11 @@ async function copyUsername(id) {
   return false;
 }
 
+// ── Relative time on cards ──
+document.querySelectorAll('.relative-time').forEach(el => {
+  el.textContent = formatRelativeTime(el.dataset.time);
+});
+
 // ── Clipboard copy (detail page) ──
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.copy-btn');
@@ -61,7 +97,7 @@ document.addEventListener('click', (e) => {
   });
 });
 
-// ── Quick-copy buttons (list view) ──
+// ── Quick-copy buttons (list view) with loading state ──
 document.addEventListener('click', (e) => {
   const secretBtn = e.target.closest('.quick-copy-secret');
   const userBtn = e.target.closest('.quick-copy-user');
@@ -69,43 +105,38 @@ document.addEventListener('click', (e) => {
   if (!btn) return;
   e.preventDefault();
   e.stopPropagation();
-  const id = btn.dataset.id;
-  const icon = btn.querySelector('i');
-  const origClass = icon.className;
-  if (secretBtn) {
-    copySecret(id).then((ok) => {
-      if (ok) { icon.className = 'bi bi-check-lg'; setTimeout(() => icon.className = origClass, 1500); }
-    });
-  } else {
-    copyUsername(id).then((ok) => {
-      if (ok) { icon.className = 'bi bi-check-lg'; setTimeout(() => icon.className = origClass, 1500); }
-    });
-  }
+  withLoading(btn, async () => {
+    const id = btn.dataset.id;
+    const icon = btn.querySelector('i');
+    const origClass = icon.className;
+    const ok = secretBtn ? await copySecret(id) : await copyUsername(id);
+    if (ok) { icon.className = 'bi bi-check-lg'; setTimeout(() => icon.className = origClass, 1500); }
+  });
 });
 
-// ── Pin toggle ──
+// ── Pin toggle with loading state ──
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.pin-btn');
   if (!btn) return;
   e.preventDefault();
   e.stopPropagation();
-  const id = btn.dataset.id;
-  fetch(`/api/entry/${id}/pin`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-    .then(r => r.json())
-    .then(data => {
-      const icon = btn.querySelector('i');
-      if (data.pinned) {
-        btn.classList.add('active');
-        icon.className = 'bi bi-star-fill';
-        btn.title = 'Unpin';
-        showToast('Entry pinned', 'success');
-      } else {
-        btn.classList.remove('active');
-        icon.className = 'bi bi-star';
-        btn.title = 'Pin';
-        showToast('Entry unpinned', 'success');
-      }
-    });
+  withLoading(btn, async () => {
+    const id = btn.dataset.id;
+    const r = await fetch(`/api/entry/${id}/pin`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const data = await r.json();
+    const icon = btn.querySelector('i');
+    if (data.pinned) {
+      btn.classList.add('active');
+      icon.className = 'bi bi-star-fill';
+      btn.title = 'Unpin';
+      showToast('Entry pinned', 'success');
+    } else {
+      btn.classList.remove('active');
+      icon.className = 'bi bi-star';
+      btn.title = 'Pin';
+      showToast('Entry unpinned', 'success');
+    }
+  });
 });
 
 // ── Show/hide secret on detail page ──
@@ -193,6 +224,28 @@ if (secretInput) {
   if (secretInput.value) updateStrength(secretInput.value);
 }
 
+// ── Dirty form guard ──
+const entryForm = document.querySelector('.entry-form');
+let formDirty = false;
+if (entryForm) {
+  const initialData = new FormData(entryForm);
+  const initialValues = {};
+  for (const [key, value] of initialData.entries()) {
+    if (key !== '_csrf') initialValues[key] = value;
+  }
+  entryForm.addEventListener('input', () => {
+    const currentData = new FormData(entryForm);
+    formDirty = false;
+    for (const [key, value] of currentData.entries()) {
+      if (key !== '_csrf' && initialValues[key] !== value) { formDirty = true; break; }
+    }
+  });
+  entryForm.addEventListener('submit', () => { formDirty = false; });
+  window.addEventListener('beforeunload', (e) => {
+    if (formDirty) { e.preventDefault(); e.returnValue = ''; }
+  });
+}
+
 // ── Delete confirmation ──
 const deleteForm = document.getElementById('delete-form');
 if (deleteForm) {
@@ -222,9 +275,9 @@ const importCancel = document.getElementById('import-cancel');
 
 if (importBtn && importModal) {
   importBtn.addEventListener('click', () => importModal.classList.add('active'));
-  importCancel.addEventListener('click', () => importModal.classList.remove('active'));
+  importCancel?.addEventListener('click', () => closeWithAnimation(importModal));
   importModal.addEventListener('click', (e) => {
-    if (e.target === importModal) importModal.classList.remove('active');
+    if (e.target === importModal) closeWithAnimation(importModal);
   });
 }
 
@@ -266,9 +319,9 @@ if (shortcutsBtn && shortcutsModal) {
   shortcutsBtn.addEventListener('click', () => shortcutsModal.classList.add('active'));
 }
 if (shortcutsClose && shortcutsModal) {
-  shortcutsClose.addEventListener('click', () => shortcutsModal.classList.remove('active'));
+  shortcutsClose.addEventListener('click', () => closeWithAnimation(shortcutsModal));
   shortcutsModal.addEventListener('click', (e) => {
-    if (e.target === shortcutsModal) shortcutsModal.classList.remove('active');
+    if (e.target === shortcutsModal) closeWithAnimation(shortcutsModal);
   });
 }
 
@@ -293,6 +346,7 @@ const TYPE_ICONS = {
 const COMMANDS = [
   { name: 'New entry', icon: 'bi-plus-lg', action: () => location.href = '/new' },
   { name: 'Export backup', icon: 'bi-download', action: () => location.href = '/export' },
+  { name: 'Import from CSV', icon: 'bi-filetype-csv', action: () => location.href = '/import/csv' },
   { name: 'Import backup', icon: 'bi-upload', action: () => { closePalette(); importModal?.classList.add('active'); } },
 ];
 
@@ -302,7 +356,6 @@ function openPalette() {
   paletteInput.value = '';
   paletteIndex = -1;
   paletteInput.focus();
-  // Fetch entries if not cached (or re-fetch for freshness)
   fetch('/api/entries', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
     .then(r => r.json())
     .then(data => { paletteEntries = data; renderPalette(''); });
@@ -310,7 +363,7 @@ function openPalette() {
 
 function closePalette() {
   if (!palette) return;
-  palette.classList.remove('active');
+  closeWithAnimation(palette);
   paletteInput.value = '';
   paletteEntries = [];
 }
@@ -342,7 +395,9 @@ function renderPalette(query) {
     );
   }
 
-  paletteResults.innerHTML = filtered.slice(0, 15).map((e, i) =>
+  const countText = `<div class="palette-footer">${filtered.length} entr${filtered.length === 1 ? 'y' : 'ies'}</div>`;
+
+  paletteResults.innerHTML = (filtered.slice(0, 15).map((e, i) =>
     `<div class="palette-item ${i === paletteIndex ? 'selected' : ''}" data-id="${e.id}">
       <i class="bi ${TYPE_ICONS[e.type] || 'bi-lock-fill'} palette-item-icon"></i>
       <span class="palette-item-name">${e.name}</span>
@@ -352,7 +407,7 @@ function renderPalette(query) {
         <button class="btn-icon palette-copy" data-id="${e.id}" title="Copy secret"><i class="bi bi-clipboard"></i></button>
       </div>
     </div>`
-  ).join('') || '<div class="palette-empty">No entries found</div>';
+  ).join('') || '<div class="palette-empty">No entries found</div>') + countText;
 }
 
 if (paletteInput) {
@@ -420,8 +475,7 @@ document.addEventListener('keydown', (e) => {
   // Escape — close modals/palette, or go back
   if (e.key === 'Escape') {
     if (paletteOpen) { closePalette(); return; }
-    if (anyModalOpen) { anyModalOpen.classList.remove('active'); return; }
-    // On detail page, go back
+    if (anyModalOpen) { closeWithAnimation(anyModalOpen); return; }
     const backLink = document.querySelector('.back-link');
     if (backLink && !isInputFocused()) { backLink.click(); return; }
     return;
@@ -498,10 +552,7 @@ document.addEventListener('keydown', (e) => {
         copySecret(cards[selectedIndex].dataset.id);
       } else if (onDetailPage) {
         e.preventDefault();
-        const secretCopy = document.querySelector('.detail-field:nth-child(2) .copy-btn, .detail-field .copy-btn[data-copy]');
-        // Find the secret copy button specifically
-        const secretField = document.querySelector('.secret-masked')?.closest('.field-value')?.querySelector('.copy-btn');
-        if (secretField) secretField.click();
+        document.querySelector('.copy-btn[data-field="secret"]')?.click();
       }
       break;
 
@@ -515,9 +566,7 @@ document.addEventListener('keydown', (e) => {
     case 'u':
       if (onDetailPage) {
         e.preventDefault();
-        // Copy username from detail page
-        const userField = document.querySelector('.detail-field:first-of-type .copy-btn');
-        if (userField) userField.click();
+        document.querySelector('.copy-btn[data-field="username"]')?.click();
       }
       break;
     case 'b':

@@ -49,7 +49,7 @@
     <label>Username</label>
     <div class="field-value">
       <span class="masked-value" data-value="<%= entry.username %>"><%= entry.username %></span>
-      <button class="btn-icon copy-btn" data-copy="<%= entry.username %>" title="Copy"><i class="bi bi-clipboard"></i></button>
+      <button class="btn-icon copy-btn" data-copy="<%= entry.username %>" data-field="username" title="Copy username"><i class="bi bi-clipboard"></i></button>
     </div>
   </div>
   <% } %>
@@ -59,7 +59,7 @@
     <div class="field-value">
       <span class="masked-value secret-masked" data-value="<%= entry.secret %>">••••••••••••</span>
       <button class="btn-icon toggle-vis" title="Show/hide"><i class="bi bi-eye"></i></button>
-      <button class="btn-icon copy-btn" data-copy="<%= entry.secret %>" title="Copy"><i class="bi bi-clipboard"></i></button>
+      <button class="btn-icon copy-btn" data-copy="<%= entry.secret %>" data-field="secret" title="Copy secret"><i class="bi bi-clipboard"></i></button>
     </div>
   </div>
 

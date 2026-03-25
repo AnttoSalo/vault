@@ -10,17 +10,27 @@
       <i class="bi bi-search"></i>
       <input type="text" name="search" value="<%= search %>" placeholder="Search entries...  (/ to focus)" id="search-input">
       <% if (search) { %><a href="/" class="search-clear"><i class="bi bi-x-lg"></i></a><% } %>
-      <kbd class="search-kbd">Ctrl+K</kbd>
+      <kbd class="search-kbd">/</kbd>
     </div>
     <input type="hidden" name="category" value="<%= category %>">
+    <input type="hidden" name="sort" value="<%= sort %>">
   </form>
 
-  <div class="category-pills">
-    <a href="/?search=<%= encodeURIComponent(search) %>" class="pill <%= category === 'all' ? 'active' : '' %>">All</a>
-    <a href="/?category=recent&search=<%= encodeURIComponent(search) %>" class="pill <%= category === 'recent' ? 'active' : '' %>"><i class="bi bi-clock-history"></i> Recent</a>
-    <% categories.forEach(c => { %>
-      <a href="/?category=<%= c %>&search=<%= encodeURIComponent(search) %>" class="pill <%= category === c ? 'active' : '' %>"><%= c.replace('-', ' ') %></a>
-    <% }) %>
+  <div class="toolbar-row">
+    <div class="category-pills">
+      <a href="/?search=<%= encodeURIComponent(search) %>&sort=<%= sort %>" class="pill <%= category === 'all' ? 'active' : '' %>">All</a>
+      <a href="/?category=recent&search=<%= encodeURIComponent(search) %>" class="pill <%= category === 'recent' ? 'active' : '' %>"><i class="bi bi-clock-history"></i> Recent</a>
+      <% categories.forEach(c => { %>
+        <a href="/?category=<%= c %>&search=<%= encodeURIComponent(search) %>&sort=<%= sort %>" class="pill <%= category === c ? 'active' : '' %>"><%= c.replace('-', ' ') %></a>
+      <% }) %>
+    </div>
+    <select class="sort-select" onchange="location.href='/?category=<%= category %>&search=<%= encodeURIComponent(search) %>&sort='+this.value">
+      <option value="name-asc" <%= sort === 'name-asc' ? 'selected' : '' %>>Name A-Z</option>
+      <option value="name-desc" <%= sort === 'name-desc' ? 'selected' : '' %>>Name Z-A</option>
+      <option value="created" <%= sort === 'created' ? 'selected' : '' %>>Newest</option>
+      <option value="updated" <%= sort === 'updated' ? 'selected' : '' %>>Updated</option>
+      <option value="accessed" <%= sort === 'accessed' ? 'selected' : '' %>>Accessed</option>
+    </select>
   </div>
 </div>
 

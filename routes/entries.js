@@ -9,12 +9,13 @@ const TYPES = ["password", "api-key", "database", "ssh-key", "note", "ftp"];
 
 // List all entries
 router.get("/", (req, res) => {
-  const { search, category } = req.query;
-  const entries = store.getAll({ search, category });
+  const { search, category, sort } = req.query;
+  const entries = store.getAll({ search, category, sort });
   res.render("index", {
     entries,
     search: search || "",
     category: category || "all",
+    sort: sort || "name-asc",
     categories: CATEGORIES,
     flash: (() => { const f = req.session.flash; delete req.session.flash; return f || null; })(),
   });

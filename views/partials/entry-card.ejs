@@ -16,6 +16,7 @@
     <div class="entry-meta">
       <span class="badge badge-<%= entry.category %>"><%= entry.category.replace('-', ' ') %></span>
       <% if (entry.username) { %><span class="entry-user"><i class="bi bi-person-fill"></i> <%= entry.username %></span><% } %>
+      <% if (entry.lastAccessedAt) { %><span class="entry-accessed" title="Last accessed: <%= new Date(entry.lastAccessedAt + 'Z').toLocaleString() %>"><i class="bi bi-clock"></i> <span class="relative-time" data-time="<%= entry.lastAccessedAt %>Z"></span></span><% } %>
     </div>
   </div>
   <div class="entry-actions">
