@@ -3,9 +3,9 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import session from "express-session";
 import crypto from "crypto";
-import { dirname, join } from "path";
+import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
-import { PORT, NODE_ENV } from "./config.js";
+import { PORT, NODE_ENV, SESSION_SECRET } from "./config.js";
 import entriesRouter from "./routes/entries.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -51,7 +51,7 @@ app.use(express.static(join(__dirname, "public")));
 // Sessions (for CSRF + flash messages)
 app.use(
   session({
-    secret: crypto.randomBytes(32).toString("hex"),
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -65,11 +65,9 @@ app.use(
 
 // CSRF protection
 app.use((req, res, next) => {
-  if (req.method === "GET" || req.method === "HEAD") {
-    if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(24).toString("hex");
-    res.locals.csrfToken = req.session.csrfToken;
-    return next();
-  }
+  if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(24).toString("hex");
+  res.locals.csrfToken = req.session.csrfToken;
+  if (req.method === "GET" || req.method === "HEAD") return next();
   // Skip CSRF for XHR requests
   if (req.headers["x-requested-with"] === "XMLHttpRequest") return next();
   if (req.body?._csrf !== req.session.csrfToken) {
@@ -98,8 +96,12 @@ app.use((err, _req, res, _next) => {
   res.status(500).render("error", { status: 500, message: NODE_ENV === "production" ? "Server error." : err.message });
 });
 
-// Start
+// Start (only when run directly, not when imported for tests)
 const host = NODE_ENV === "production" ? "127.0.0.1" : "0.0.0.0";
-app.listen(PORT, host, () => {
-  console.log(`Vault running on http://${host}:${PORT}`);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url).replace(/\\/g, "/") === resolve(process.argv[1]).replace(/\\/g, "/")) {
+  app.listen(PORT, host, () => {
+    console.log(`Vault running on http://${host}:${PORT}`);
+  });
+}
+
+export { app };

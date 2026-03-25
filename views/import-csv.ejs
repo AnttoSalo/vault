@@ -71,10 +71,10 @@
 
     <div class="preview-list">
       <% result.entries.forEach((entry, i) => { %>
-        <div class="preview-row">
-          <input type="checkbox" name="selected" value="<%= i %>" checked class="preview-check">
+        <div class="preview-row <%= entry._duplicate ? 'already-exists' : '' %>">
+          <input type="checkbox" name="selected" value="<%= i %>" <%= entry._duplicate ? '' : 'checked' %> class="preview-check">
           <div class="preview-info">
-            <div class="preview-name"><%= entry.name %></div>
+            <div class="preview-name"><%= entry.name %><% if (entry._duplicate) { %> <span class="badge badge-type">already exists</span><% } %></div>
             <div class="preview-meta">
               <span class="badge badge-<%= entry.category %>"><%= entry.category.replace('-', ' ') %></span>
               <% if (entry.username) { %><span class="text-muted"><i class="bi bi-person-fill"></i> <%= entry.username %></span><% } %>

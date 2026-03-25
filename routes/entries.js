@@ -6,6 +6,21 @@ const router = Router();
 
 const CATEGORIES = ["server", "api-keys", "databases", "personal", "business", "other"];
 const TYPES = ["password", "api-key", "database", "ssh-key", "note", "ftp"];
+const LIMITS = { name: 200, username: 500, secret: 10000, url: 2000, notes: 50000, tags: 500 };
+
+function validate(body) {
+  const fields = {};
+  for (const [key, max] of Object.entries(LIMITS)) {
+    let val = typeof body[key] === "string" ? body[key].trim() : "";
+    if (val.length > max) return { error: `${key} exceeds maximum length (${max} chars).` };
+    fields[key] = val;
+  }
+  fields.category = CATEGORIES.includes(body.category) ? body.category : "other";
+  fields.type = TYPES.includes(body.type) ? body.type : "password";
+  if (!fields.name) return { error: "Name is required." };
+  if (!fields.secret) return { error: "Secret is required." };
+  return { fields };
+}
 
 // List all entries
 router.get("/", (req, res) => {
@@ -40,16 +55,11 @@ router.get("/new", (req, res) => {
 
 // Create entry
 router.post("/new", (req, res) => {
-  const { name, category, type, username, secret, url, notes, tags } = req.body;
-  if (!name || !secret) {
-    return res.render("entry-form", {
-      entry: req.body,
-      categories: CATEGORIES,
-      types: TYPES,
-      error: "Name and secret are required.",
-    });
+  const { error, fields } = validate(req.body);
+  if (error) {
+    return res.render("entry-form", { entry: req.body, categories: CATEGORIES, types: TYPES, error });
   }
-  const id = store.create({ name, category, type, username, secret, url, notes, tags });
+  const id = store.create(fields);
   req.session.flash = { type: "success", message: "Entry created." };
   res.redirect(`/entry/${id}`);
 });
@@ -77,16 +87,11 @@ router.get("/entry/:id/edit", (req, res) => {
 
 // Update entry
 router.post("/entry/:id/edit", (req, res) => {
-  const { name, category, type, username, secret, url, notes, tags } = req.body;
-  if (!name || !secret) {
-    return res.render("entry-form", {
-      entry: { ...req.body, id: req.params.id },
-      categories: CATEGORIES,
-      types: TYPES,
-      error: "Name and secret are required.",
-    });
+  const { error, fields } = validate(req.body);
+  if (error) {
+    return res.render("entry-form", { entry: { ...req.body, id: req.params.id }, categories: CATEGORIES, types: TYPES, error });
   }
-  store.update(req.params.id, { name, category, type, username, secret, url, notes, tags });
+  store.update(req.params.id, fields);
   req.session.flash = { type: "success", message: "Entry updated." };
   res.redirect(`/entry/${req.params.id}`);
 });
@@ -157,11 +162,16 @@ router.post("/import/csv/preview", (req, res) => {
   if (!csv || !csv.trim()) {
     return res.render("import-csv", { result: null, error: "No CSV data provided." });
   }
+  if (csv.length > 5_000_000) {
+    return res.render("import-csv", { result: null, error: "CSV data too large (max 5MB)." });
+  }
   const result = convertCSV(csv);
   if (result.error) {
     return res.render("import-csv", { result: null, error: result.error });
   }
-  // Store parsed entries in session for the confirm step
+  // Mark duplicates
+  const isDup = store.findDuplicates(result.entries);
+  result.entries.forEach((e, i) => { e._duplicate = isDup[i]; });
   req.session.csvEntries = result.entries;
   res.render("import-csv", { result, error: null });
 });

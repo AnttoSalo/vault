@@ -806,6 +806,7 @@ body {
 .preview-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .preview-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 12px; flex-wrap: wrap; }
 .preview-url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+.preview-row.already-exists { opacity: 0.5; }
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
