@@ -1,0 +1,20 @@
+{
+  "name": "vault",
+  "version": "1.0.0",
+  "description": "Self-hosted password and secret manager",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "npx nodemon server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.3.1",
+    "express-session": "^1.18.1",
+    "dotenv": "^16.4.7",
+    "helmet": "^7.1.0"
+  }
+}

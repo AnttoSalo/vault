@@ -1,0 +1,74 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <a href="<%= entry && entry.id ? `/entry/${entry.id}` : '/' %>" class="back-link"><i class="bi bi-arrow-left"></i> Back</a>
+  <h2><%= entry && entry.id ? 'Edit Entry' : 'New Entry' %></h2>
+</div>
+
+<% if (error) { %>
+  <div class="alert alert-error"><%= error %></div>
+<% } %>
+
+<form method="POST" action="<%= entry && entry.id ? `/entry/${entry.id}/edit` : '/new' %>" class="entry-form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="form-group">
+    <label for="name">Name <span class="required">*</span></label>
+    <input type="text" id="name" name="name" value="<%= entry ? entry.name || '' : '' %>" required placeholder="e.g. PostgreSQL MSH">
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <% categories.forEach(c => { %>
+          <option value="<%= c %>" <%= entry && entry.category === c ? 'selected' : '' %>><%= c.replace('-', ' ') %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="type">Type</label>
+      <select id="type" name="type">
+        <% types.forEach(t => { %>
+          <option value="<%= t %>" <%= entry && entry.type === t ? 'selected' : '' %>><%= t.replace('-', ' ') %></option>
+        <% }) %>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" value="<%= entry ? entry.username || '' : '' %>" placeholder="e.g. admin" autocomplete="off">
+  </div>
+
+  <div class="form-group">
+    <label for="secret">Secret / Password <span class="required">*</span></label>
+    <div class="secret-input-wrap">
+      <input type="password" id="secret" name="secret" value="<%= entry ? entry.secret || '' : '' %>" required autocomplete="off">
+      <button type="button" class="btn-icon" id="toggle-secret" title="Show/hide"><i class="bi bi-eye"></i></button>
+      <button type="button" class="btn-icon" id="generate-pw" title="Generate password"><i class="bi bi-dice-5-fill"></i></button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="url">URL / Host</label>
+    <input type="text" id="url" name="url" value="<%= entry ? entry.url || '' : '' %>" placeholder="e.g. 192.168.1.120:5432">
+  </div>
+
+  <div class="form-group">
+    <label for="tags">Tags</label>
+    <input type="text" id="tags" name="tags" value="<%= entry ? entry.tags || '' : '' %>" placeholder="e.g. production, msh">
+  </div>
+
+  <div class="form-group">
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="4" placeholder="Additional details..."><%= entry ? entry.notes || '' : '' %></textarea>
+  </div>
+
+  <div class="form-actions">
+    <a href="<%= entry && entry.id ? `/entry/${entry.id}` : '/' %>" class="btn btn-ghost">Cancel</a>
+    <button type="submit" class="btn btn-primary"><%= entry && entry.id ? 'Save Changes' : 'Create Entry' %></button>
+  </div>
+</form>
+
+<%- include('partials/footer') %>
