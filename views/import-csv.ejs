@@ -1,0 +1,134 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Back</a>
+  <h2>Import from Chrome / LastPass</h2>
+</div>
+
+<% if (error) { %>
+  <div class="alert alert-error"><%= error %></div>
+<% } %>
+
+<% if (!result) { %>
+  <!-- Step 1: Paste or upload CSV -->
+  <div class="import-instructions">
+    <div class="instruction-cards">
+      <div class="instruction-card">
+        <h4><i class="bi bi-browser-chrome"></i> Chrome</h4>
+        <ol>
+          <li>Open <code>chrome://password-manager/settings</code></li>
+          <li>Click <strong>Download file</strong> under Export passwords</li>
+          <li>Paste the CSV contents below</li>
+        </ol>
+      </div>
+      <div class="instruction-card">
+        <h4><i class="bi bi-shield-lock"></i> LastPass</h4>
+        <ol>
+          <li>Go to <strong>Account Settings</strong> > <strong>Advanced</strong></li>
+          <li>Click <strong>Export</strong> > <strong>Generic CSV file</strong></li>
+          <li>Paste the CSV contents below</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" action="/import/csv/preview" class="entry-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="form-group">
+      <label>CSV File</label>
+      <div class="import-dropzone" id="csv-dropzone">
+        <i class="bi bi-filetype-csv"></i>
+        <p>Drop your CSV file here or <label for="csv-file" class="import-file-label">choose file</label></p>
+        <input type="file" id="csv-file" accept=".csv,.txt" class="sr-only">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="csv">Or paste CSV data</label>
+      <textarea id="csv" name="csv" rows="10" placeholder="url,username,password&#10;https://example.com,user@email.com,mypassword123" style="font-family: monospace; font-size: 13px;"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <a href="/" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-eye"></i> Preview Import</button>
+    </div>
+  </form>
+
+<% } else { %>
+  <!-- Step 2: Preview and confirm -->
+  <div class="alert alert-success">
+    Detected <strong><%= result.format === 'lastpass' ? 'LastPass' : 'Chrome' %></strong> format — <strong><%= result.entries.length %></strong> entries found.
+  </div>
+
+  <form method="POST" action="/import/csv/confirm" class="entry-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="preview-header">
+      <label><input type="checkbox" id="select-all" checked> Select all</label>
+      <span class="text-muted"><%= result.entries.length %> entries</span>
+    </div>
+
+    <div class="preview-list">
+      <% result.entries.forEach((entry, i) => { %>
+        <div class="preview-row">
+          <input type="checkbox" name="selected" value="<%= i %>" checked class="preview-check">
+          <div class="preview-info">
+            <div class="preview-name"><%= entry.name %></div>
+            <div class="preview-meta">
+              <span class="badge badge-<%= entry.category %>"><%= entry.category.replace('-', ' ') %></span>
+              <% if (entry.username) { %><span class="text-muted"><i class="bi bi-person-fill"></i> <%= entry.username %></span><% } %>
+              <% if (entry.url) { %><span class="text-muted preview-url"><i class="bi bi-link-45deg"></i> <%= entry.url.substring(0, 40) %><%= entry.url.length > 40 ? '...' : '' %></span><% } %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <div class="form-actions">
+      <a href="/import/csv" class="btn btn-ghost"><i class="bi bi-arrow-left"></i> Back</a>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-download"></i> Import Selected</button>
+    </div>
+  </form>
+<% } %>
+
+<script nonce="<%= nonce %>">
+  // File picker for CSV
+  const csvFile = document.getElementById('csv-file');
+  const csvTextarea = document.getElementById('csv');
+  const csvDropzone = document.getElementById('csv-dropzone');
+
+  if (csvFile && csvTextarea) {
+    csvFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { csvTextarea.value = reader.result; };
+      reader.readAsText(file);
+    });
+  }
+
+  if (csvDropzone && csvTextarea) {
+    csvDropzone.addEventListener('dragover', (e) => { e.preventDefault(); csvDropzone.classList.add('drag-over'); });
+    csvDropzone.addEventListener('dragleave', () => csvDropzone.classList.remove('drag-over'));
+    csvDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      csvDropzone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { csvTextarea.value = reader.result; };
+      reader.readAsText(file);
+    });
+  }
+
+  // Select all toggle
+  const selectAll = document.getElementById('select-all');
+  if (selectAll) {
+    selectAll.addEventListener('change', () => {
+      document.querySelectorAll('.preview-check').forEach(cb => { cb.checked = selectAll.checked; });
+    });
+  }
+</script>
+
+<%- include('partials/footer') %>

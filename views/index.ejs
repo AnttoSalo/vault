@@ -55,7 +55,8 @@
 <div class="footer-bar">
   <span class="entry-count"><%= entries.length %> entr<%= entries.length === 1 ? 'y' : 'ies' %></span>
   <div class="footer-actions">
-    <button class="btn-icon" id="import-btn" title="Import backup"><i class="bi bi-upload"></i></button>
+    <a href="/import/csv" class="btn-icon" title="Import from Chrome / LastPass"><i class="bi bi-filetype-csv"></i></a>
+    <button class="btn-icon" id="import-btn" title="Import vault backup"><i class="bi bi-upload"></i></button>
     <a href="/export" class="btn-icon" title="Export backup"><i class="bi bi-download"></i></a>
     <button class="btn-icon" id="shortcuts-btn" title="Keyboard shortcuts"><i class="bi bi-keyboard"></i></button>
   </div>

@@ -684,6 +684,67 @@ body {
   text-align: center;
 }
 
+/* ── CSV Import ── */
+.import-instructions { margin-bottom: 20px; }
+.instruction-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.instruction-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.instruction-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.instruction-card ol {
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text-label);
+  line-height: 1.7;
+}
+.instruction-card code {
+  font-size: 12px;
+  background: var(--bg-input);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--primary);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.preview-header label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.text-muted { color: var(--text-muted); font-size: 13px; }
+
+.preview-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.preview-row:last-child { border-bottom: none; }
+.preview-check { flex-shrink: 0; accent-color: var(--primary); }
+.preview-info { flex: 1; min-width: 0; }
+.preview-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preview-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 12px; flex-wrap: wrap; }
+.preview-url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .navbar { padding: 10px 16px; }
@@ -694,6 +755,7 @@ body {
   .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
   .detail-footer { flex-direction: column; gap: 4px; }
   .search-kbd { display: none; }
+  .instruction-cards { grid-template-columns: 1fr; }
   .shortcuts-grid { grid-template-columns: 1fr; }
   .palette-overlay { padding-top: 5vh; }
 }

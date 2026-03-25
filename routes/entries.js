@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as store from "../lib/store.js";
+import { convertCSV } from "../lib/csv.js";
 
 const router = Router();
 
@@ -141,6 +142,61 @@ router.post("/import", (req, res) => {
   } catch (e) {
     req.session.flash = { type: "error", message: "Failed to parse backup file." };
   }
+  res.redirect("/");
+});
+
+// CSV import page
+router.get("/import/csv", (_req, res) => {
+  res.render("import-csv", { result: null, error: null });
+});
+
+// CSV import: parse and preview
+router.post("/import/csv/preview", (req, res) => {
+  const { csv } = req.body;
+  if (!csv || !csv.trim()) {
+    return res.render("import-csv", { result: null, error: "No CSV data provided." });
+  }
+  const result = convertCSV(csv);
+  if (result.error) {
+    return res.render("import-csv", { result: null, error: result.error });
+  }
+  // Store parsed entries in session for the confirm step
+  req.session.csvEntries = result.entries;
+  res.render("import-csv", { result, error: null });
+});
+
+// CSV import: confirm and save
+router.post("/import/csv/confirm", (req, res) => {
+  const entries = req.session.csvEntries;
+  if (!entries || !entries.length) {
+    req.session.flash = { type: "error", message: "No entries to import. Please parse CSV first." };
+    return res.redirect("/import/csv");
+  }
+
+  // Get selected indices (checkboxes) — if none selected, import all
+  let selected = req.body.selected;
+  let toImport;
+  if (selected) {
+    if (!Array.isArray(selected)) selected = [selected];
+    const indices = new Set(selected.map(Number));
+    toImport = entries.filter((_, i) => indices.has(i));
+  } else {
+    toImport = entries;
+  }
+
+  // Clean up _fav field and apply pin for LastPass favorites
+  const cleaned = toImport.map(({ _fav, ...rest }) => rest);
+
+  const count = store.bulkCreate(cleaned);
+  delete req.session.csvEntries;
+
+  // Pin favorites from LastPass
+  if (toImport.some((e) => e._fav)) {
+    // We'd need the IDs, but bulk insert doesn't return them easily.
+    // Skip auto-pin for now — users can pin manually.
+  }
+
+  req.session.flash = { type: "success", message: `Imported ${count} entries from CSV.` };
   res.redirect("/");
 });
 
